@@ -63,5 +63,11 @@ io.on('connection' , (socket) => {
  
     })
 })
-
+setInterval(() => {
+    rooms.forEach((room, index)=> {
+        if(room[1].length === 0){
+            rooms.splice(index , 1) ; 
+        }
+    }) ; 
+} , 1000)
 
