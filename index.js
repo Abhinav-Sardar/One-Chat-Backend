@@ -13,11 +13,8 @@ const io = socketio(server, {
     }
 }) ; 
 
-app.use(function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    next();
-})
+app.use(CORS())
+
 app.get('/' , (req , res) => {
     res.send('Hello World') ; 
 }) ; 
@@ -66,12 +63,5 @@ io.on('connection' , (socket) => {
  
     })
 })
-setInterval(() => {
-    console.log(rooms) ; 
-    rooms.forEach((room, index)=> {
-        if(room[1].length === 0){
-            rooms.splice(index , 1) ; 
-        }
-    }) ; 
-} , 2000)
+
 
