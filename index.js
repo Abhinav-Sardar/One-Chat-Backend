@@ -51,8 +51,8 @@ io.on('connection' , (socket) => {
         }
         //  [[] , []]
     }
-    socket.on('message' , ([room , value])=> {
-        socket.to(room).emit('foreign-message' , value) ; 
+    socket.on('message' , ([room , value , author , created_at])=> {
+        socket.to(room).emit('foreign-message' , [value , author , created_at]) ; 
     }) ; 
     socket.on('disconnect' , () => {
         let useroom = rooms.map(eachroom => eachroom[0] === room) ; 
