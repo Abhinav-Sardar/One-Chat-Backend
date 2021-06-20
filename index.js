@@ -9,11 +9,10 @@ const socketio = require('socket.io') ;
 const io = socketio(server, {
     cors:{
         origin:'http://localhost:3000'
-        // methods:'GET'
     }
 }) ; 
 
-app.use(CORS())
+app.use(CORS()) ; 
 
 app.get('/' , (req , res) => {
     res.send('Hello World') ; 
@@ -24,7 +23,6 @@ server.listen(PORT , () => {
     console.log('Listening on port ', PORT)  ; 
 })
 io.on('connection' , (socket) => {
-    console.log('A new user connected!!!') ; 
     socket.on('new' , ([name , room]) => {
        if(rooms.length === 0){
            rooms.push([room , [name]]) ; 
