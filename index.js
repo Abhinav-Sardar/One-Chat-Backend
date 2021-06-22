@@ -60,6 +60,7 @@ io.on('connection' , (socket) => {
     })
  
     })
+    socket.on('req-info', () => socket.emit('res-info' , rooms)) ; 
 })
 setInterval(() => {
     rooms.forEach((room, index)=> {
