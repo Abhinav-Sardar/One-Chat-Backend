@@ -6,7 +6,11 @@ const PORT = process.env.PORT || 1919;
 const server = http.createServer(app);
 const socketio = require("socket.io");
 
-app.use(CORS());
+app.use(
+	CORS({
+		origin: "https://one-chat-v1.netlify.app/",
+	})
+);
 const io = socketio(server, {
 	cors: {
 		origin: "https://one-chat-v1.netlify.app/",
