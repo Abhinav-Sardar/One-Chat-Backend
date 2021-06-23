@@ -14,6 +14,10 @@ const io = socketio(server, {
 
 app.use(CORS());
 
+app.use((req, res, next) => {
+	res.setHeader("Access-Control-Allow-Origin", "*");
+	next();
+});
 app.get("/", (req, res) => {
 	res.send("Hello World");
 });
