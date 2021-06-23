@@ -8,12 +8,12 @@ const socketio = require("socket.io");
 
 app.use(
 	CORS({
-		origin: "https://one-chat-v1.netlify.app/",
+		origin: "*",
 	})
 );
 const io = socketio(server, {
 	cors: {
-		origin: "https://one-chat-v1.netlify.app/",
+		origin: "*",
 	},
 });
 
