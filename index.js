@@ -31,6 +31,10 @@ server.listen(PORT, () => {
   console.log("Listening on port ", PORT);
 });
 io.on("connection", (socket) => {
+  socket.on("room-check", (roomName) => {
+    const room = rooms.find((r) => r.name === roomName);
+    socket.emit("room-check", room);
+  });
   console.log("A new client has connected!");
   socket.on("new-user", (payload) => {
     if (rooms.length === 0) {
@@ -57,6 +61,14 @@ io.on("connection", (socket) => {
         socket.join(payload.roomName);
         socket.to(payload.roomName).emit("room-info", doesRoomExist.members);
         socket.emit("room-info", doesRoomExist.members);
+      } else {
+        rooms.push({
+          name: payload.roomName,
+          members: [{ name: payload.name, profilePic: payload.profilePic }],
+        });
+        socket.join(payload.roomName);
+        const members = rooms.find((r) => r.name === payload.roomName).members;
+        socket.emit("room-info", members);
       }
     }
     socket.on("disconnect", () => {
