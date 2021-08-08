@@ -56,6 +56,7 @@ io.on("connection", (socket) => {
         console.log("Room already exists");
         doesRoomExist.members.push({
           name: payload.name,
+
           profilePic: payload.profilePic,
         });
         socket.join(payload.roomName);
@@ -71,6 +72,9 @@ io.on("connection", (socket) => {
         socket.emit("room-info", members);
       }
     }
+    socket.on("message", (newMessage) => {
+      socket.to(payload.roomName).emit("message", newMessage);
+    });
     socket.on("disconnect", () => {
       const userRoom = rooms.find((r) => r.name === payload.roomName);
       const filteredUsers = userRoom.members.filter(
