@@ -31,7 +31,6 @@ server.listen(PORT, () => {
   console.log("Listening on port ", PORT);
 });
 io.on("connection", (socket) => {
-  console.log("A new client has connected!");
   socket.on("new-user", (payload) => {
     if (rooms.length === 0) {
       rooms.push({
@@ -40,10 +39,13 @@ io.on("connection", (socket) => {
           {
             name: payload.name,
             profilePic: payload.profilePic,
+            host: true,
+            id: socket.id,
           },
         ],
       });
       socket.emit("room-info", rooms[0].members);
+      socket.emit("host");
       socket.join(payload.roomName);
     } else {
       const doesRoomExist = rooms.find((r) => r.name === payload.roomName);
@@ -52,8 +54,9 @@ io.on("connection", (socket) => {
         console.log("Room already exists");
         doesRoomExist.members.push({
           name: payload.name,
-
+          host: false,
           profilePic: payload.profilePic,
+          id: socket.id,
         });
         socket.join(payload.roomName);
         socket.to(payload.roomName).emit("room-info", doesRoomExist.members);
@@ -61,11 +64,19 @@ io.on("connection", (socket) => {
       } else {
         rooms.push({
           name: payload.roomName,
-          members: [{ name: payload.name, profilePic: payload.profilePic }],
+          members: [
+            {
+              name: payload.name,
+              profilePic: payload.profilePic,
+              host: true,
+              id: socket.id,
+            },
+          ],
         });
         socket.join(payload.roomName);
         const members = rooms.find((r) => r.name === payload.roomName).members;
         socket.emit("room-info", members);
+        socket.emit("host");
       }
     }
     socket.on("message", (newMessage) => {
@@ -76,10 +87,36 @@ io.on("connection", (socket) => {
       const filteredUsers = userRoom.members.filter(
         (user) => user.name !== payload.name
       );
+      if (filteredUsers.length !== 0) {
+        const latestUser = filteredUsers[0];
+        socket.to(latestUser.id).emit("host");
+        latestUser.host = true;
+      } else {
+        userRoom.members = [];
+      }
       userRoom.members = filteredUsers;
+
       socket
         .to(payload.roomName)
         .emit("user-left", payload.name, userRoom.members);
+    });
+    console.log("A new client has connected!");
+    socket.on("ban-user", (userToBeBanned) => {
+      console.log(userToBeBanned);
+      const particularRoom = rooms.find((r) => r.name === payload.roomName);
+      const user = particularRoom.members.find(
+        (u) => u.name === userToBeBanned
+      );
+      const userIndex = particularRoom.members.indexOf(user);
+      particularRoom.members.splice(userIndex, 1);
+      socket.to(user.id).emit("ban");
+      socket
+        .to(payload.roomName)
+        .emit(
+          "user-banned",
+          particularRoom.members,
+          `${userToBeBanned} has been kicked by ${payload.name}`
+        );
     });
   });
   socket.on("rooms", () => {
@@ -88,6 +125,7 @@ io.on("connection", (socket) => {
   });
 });
 setInterval(() => {
+  console.log(rooms);
   rooms.forEach((room, index) => {
     if (room.members.length === 0) {
       rooms.splice(index, 1);
