@@ -51,7 +51,6 @@ io.on("connection", (socket) => {
       const doesRoomExist = rooms.find((r) => r.name === payload.roomName);
 
       if (doesRoomExist) {
-        console.log("Room already exists");
         doesRoomExist.members.push({
           name: payload.name,
           host: false,
@@ -100,9 +99,7 @@ io.on("connection", (socket) => {
         .to(payload.roomName)
         .emit("user-left", payload.name, userRoom.members);
     });
-    console.log("A new client has connected!");
     socket.on("ban-user", (userToBeBanned) => {
-      console.log(userToBeBanned);
       const particularRoom = rooms.find((r) => r.name === payload.roomName);
       const user = particularRoom.members.find(
         (u) => u.name === userToBeBanned
@@ -120,12 +117,10 @@ io.on("connection", (socket) => {
     });
   });
   socket.on("rooms", () => {
-    console.log("Someone requested for rooms 😎");
     socket.emit("rooms-back", rooms);
   });
 });
 setInterval(() => {
-  console.log(rooms);
   rooms.forEach((room, index) => {
     if (room.members.length === 0) {
       rooms.splice(index, 1);
