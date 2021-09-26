@@ -5,6 +5,7 @@ const http = require("http");
 const PORT = process.env.PORT || 1919;
 const server = http.createServer(app);
 const socketio = require("socket.io");
+const mailer = require("nodemailer");
 
 app.use(
   CORS({
@@ -15,11 +16,6 @@ const io = socketio(server, {
   cors: {
     origin: "*",
   },
-});
-
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  next();
 });
 app.get("/", (req, res) => {
   res.send("Hello World");
@@ -99,14 +95,14 @@ io.on("connection", (socket) => {
         .to(payload.roomName)
         .emit("user-left", payload.name, userRoom.members);
     });
-    socket.on("ban-user", (userToBeBanned) => {
+    socket.on("ban-user", (userToBeBanned, reason) => {
       const particularRoom = rooms.find((r) => r.name === payload.roomName);
       const user = particularRoom.members.find(
         (u) => u.name === userToBeBanned
       );
       const userIndex = particularRoom.members.indexOf(user);
       particularRoom.members.splice(userIndex, 1);
-      socket.to(user.id).emit("ban");
+      socket.to(user.id).emit("ban", reason);
       socket
         .to(payload.roomName)
         .emit(
