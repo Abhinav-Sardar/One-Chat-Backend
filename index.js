@@ -5,7 +5,6 @@ const http = require("http");
 const PORT = process.env.PORT || 1919;
 const server = http.createServer(app);
 const socketio = require("socket.io");
-const mailer = require("nodemailer");
 
 app.use(
   CORS({
@@ -20,7 +19,10 @@ const io = socketio(server, {
 app.get("/", (req, res) => {
   res.send("Hello World");
 });
-
+app.get("/rooms", (req, res) => {
+  const filteredRooms = rooms.filter((room) => room.isPrivate === false);
+  res.json(filteredRooms);
+});
 let rooms = [];
 
 server.listen(PORT, () => {
@@ -30,6 +32,7 @@ io.on("connection", (socket) => {
   socket.on("new-user", (payload) => {
     if (rooms.length === 0) {
       rooms.push({
+        isPrivate: payload.isPrivate,
         name: payload.roomName,
         members: [
           {
@@ -54,10 +57,13 @@ io.on("connection", (socket) => {
           id: socket.id,
         });
         socket.join(payload.roomName);
-        socket.to(payload.roomName).emit("room-info", doesRoomExist.members);
+        socket
+          .to(payload.roomName)
+          .emit("new-user-join", doesRoomExist.members, payload.name);
         socket.emit("room-info", doesRoomExist.members);
       } else {
         rooms.push({
+          isPrivate: payload.isPrivate,
           name: payload.roomName,
           members: [
             {
@@ -79,21 +85,36 @@ io.on("connection", (socket) => {
     });
     socket.on("disconnect", () => {
       const userRoom = rooms.find((r) => r.name === payload.roomName);
+      const self = userRoom.members.find((r) => r.id === socket.id);
       const filteredUsers = userRoom.members.filter(
-        (user) => user.name !== payload.name
+        (user) => user.id !== socket.id
       );
-      if (filteredUsers.length !== 0) {
-        const latestUser = filteredUsers[0];
-        socket.to(latestUser.id).emit("host");
-        latestUser.host = true;
-      } else {
-        userRoom.members = [];
-      }
-      userRoom.members = filteredUsers;
+      if (filteredUsers.length === 0) {
+        if (userRoom) {
+          userRoom.members = [];
+        } else return;
 
-      socket
-        .to(payload.roomName)
-        .emit("user-left", payload.name, userRoom.members);
+        return;
+      } else {
+        if (!self) {
+          return;
+        } else {
+          if (self.host) {
+            const newHost = filteredUsers[0];
+            newHost.host = true;
+            socket.to(newHost.id).emit("host");
+            userRoom.members = filteredUsers;
+            socket
+              .to(payload.roomName)
+              .emit("new-host", payload.name, userRoom.members, newHost.name);
+          } else {
+            userRoom.members = filteredUsers;
+            socket
+              .to(payload.roomName)
+              .emit("user-left", payload.name, userRoom.members);
+          }
+        }
+      }
     });
     socket.on("ban-user", (userToBeBanned, reason) => {
       const particularRoom = rooms.find((r) => r.name === payload.roomName);
@@ -110,6 +131,11 @@ io.on("connection", (socket) => {
           particularRoom.members,
           `${userToBeBanned} has been kicked by ${payload.name}`
         );
+      socket.emit(
+        "user-banned",
+        particularRoom.members,
+        `${userToBeBanned} has been kicked by ${payload.name}`
+      );
     });
   });
   socket.on("rooms", () => {
@@ -122,4 +148,4 @@ setInterval(() => {
       rooms.splice(index, 1);
     }
   });
-}, 1000);
+});
