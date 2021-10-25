@@ -8,7 +8,7 @@ const socketio = require("socket.io");
 
 app.use(
   CORS({
-    origin: "*",
+    origin: ["http://localhost:8000", "https://one-chat-v2.netlify.app"],
   })
 );
 const io = socketio(server, {
@@ -102,11 +102,11 @@ io.on("connection", (socket) => {
           if (self.host) {
             const newHost = filteredUsers[0];
             newHost.host = true;
-            socket.to(newHost.id).emit("host");
             userRoom.members = filteredUsers;
             socket
               .to(payload.roomName)
               .emit("new-host", payload.name, userRoom.members, newHost.name);
+            socket.to(newHost.id).emit("host");
           } else {
             userRoom.members = filteredUsers;
             socket
