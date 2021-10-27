@@ -6,22 +6,19 @@ const PORT = process.env.PORT || 1919;
 const server = http.createServer(app);
 const socketio = require("socket.io");
 
-app.use(
-  CORS({
-    origin: ["http://localhost:8000", "https://one-chat-v2.netlify.app"],
-  })
-);
+app.use(CORS());
 const io = socketio(server, {
   cors: {
     origin: "*",
   },
 });
+
 app.get("/", (req, res) => {
   res.send("Hello World");
 });
 app.get("/rooms", (req, res) => {
   const filteredRooms = rooms.filter((room) => room.isPrivate === false);
-  res.json(filteredRooms);
+  res.json(extractMembersList(filteredRooms));
 });
 let rooms = [];
 
@@ -149,3 +146,12 @@ setInterval(() => {
     }
   });
 });
+
+const extractMembersList = (specialRooms) => {
+  const roomToBeReturned = [];
+  specialRooms.forEach((room) => {
+    const length = room.members.length;
+    roomToBeReturned.push({ ...room, members: [], membersLength: length });
+  });
+  return roomToBeReturned;
+};
