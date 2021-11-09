@@ -80,9 +80,18 @@ io.on("connection", (socket) => {
     socket.on("message", (newMessage) => {
       socket.to(payload.roomName).emit("message", newMessage);
     });
+    socket.on("end-room", () => {
+      const currentRoom = rooms.find((r) => r.name === payload.roomName);
+      const index = rooms.indexOf(currentRoom);
+      rooms.splice(index, 1);
+      socket.to(payload.roomName).emit("room-ended");
+      socket.emit("room-ended");
+    });
     socket.on("disconnect", () => {
       const userRoom = rooms.find((r) => r.name === payload.roomName);
+      if (!userRoom) return;
       const self = userRoom.members.find((r) => r.id === socket.id);
+      if (!self) return;
       const filteredUsers = userRoom.members.filter(
         (user) => user.id !== socket.id
       );
